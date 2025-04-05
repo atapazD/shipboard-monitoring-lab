@@ -5,12 +5,12 @@ pipeline {
     IMAGE_NAME = 'doz23/disney-producer:latest'
   }
 
-  stages {
-    stage('Clone Repo') {
-      steps {
-        git credentialsId: 'github-creds', url: 'https://github.com/atapazD/shipboard-monitoring-lab'
-      }
-    }
+//   stages {
+//     stage('Clone Repo') {
+//       steps {
+//         git credentialsId: 'github-creds', url: 'https://github.com/atapazD/shipboard-monitoring-lab'
+//       }
+//     }
 
     stage('Build Docker Image') {
       steps {
