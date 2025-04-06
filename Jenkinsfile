@@ -6,12 +6,6 @@ pipeline {
   }
 
   stages {
-    // stage('Clone Repo') {
-    //   steps {
-    //     git credentialsId: 'github-creds', url: 'https://github.com/atapazD/shipboard-monitoring-lab'
-    //   }
-    // }
-
     stage('Build Docker Image') {
       steps {
         script {
@@ -35,7 +29,7 @@ pipeline {
 
     stage('Deploy to K3s') {
       steps {
-        sh 'kubectl apply -f k8s/producer-deployment.yaml'
+        sh 'kubectl apply -f k8s/producer-deployment.yaml --namespace shipboard'
       }
     }
   }
