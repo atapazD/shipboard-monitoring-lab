@@ -33,11 +33,10 @@ pipeline {
       }
     }
 
-    // Optional: Deploy to K3s
-    // stage('Deploy to K3s') {
-    //   steps {
-    //     sh 'kubectl apply -f k8s/producer-deployment.yaml'
-    //   }
-    // }
+    stage('Deploy to K3s') {
+      steps {
+        sh 'kubectl apply -f k8s/producer-deployment.yaml'
+      }
+    }
   }
 }
