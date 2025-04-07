@@ -22,5 +22,5 @@ while True:
         channel.basic_consume(queue='disney.queue', on_message_callback=callback, auto_ack=True)
         channel.start_consuming()
     except Exception as e:
-        print(f" [!] Connection failed: {e}. Retrying in 6s...")
-        time.sleep(6)
+        print(f" [!] Connection failed: {e}. Retrying in 5s...")
+        time.sleep(5)
