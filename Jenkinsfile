@@ -4,25 +4,27 @@ pipeline {
   environment {
     PRODUCER_IMAGE = 'doz23/disney-producer:latest'
     CONSUMER_IMAGE = 'doz23/disney-consumer:latest'
-    BUILD_IMAGE = 'false'
+    BUILD_PRODUCER = 'false'
+    BUILD_CONSUMER = 'false'
   }
 
   stages {
-    stage('Check for Changes') {
+    stage('Detect App Changes') {
       steps {
         script {
           def changes = sh(
-            script: "git diff --name-only HEAD~1 HEAD | grep -E '^Dockerfile|^producer/|^consumer/' || true",
+            script: "git diff --name-only HEAD~1 HEAD || true",
             returnStdout: true
           ).trim()
 
-          if (changes) {
-            echo "Changes detected:\n${changes}"
-            currentBuild.description = "Changes in app directories – building images"
-            env.BUILD_IMAGE = "true"
-          } else {
-            echo "No relevant app changes – skipping image build"
-            currentBuild.description = "No app changes"
+          echo "Detected changes:\n${changes}"
+
+          if (changes.contains("producer/")) {
+            env.BUILD_PRODUCER = "true"
+          }
+
+          if (changes.contains("consumer/")) {
+            env.BUILD_CONSUMER = "true"
           }
         }
       }
@@ -30,7 +32,7 @@ pipeline {
 
     stage('Build Producer Image') {
       when {
-        expression { env.BUILD_IMAGE == 'true' }
+        expression { env.BUILD_PRODUCER == 'true' }
       }
       steps {
         script {
@@ -39,20 +41,9 @@ pipeline {
       }
     }
 
-    stage('Build Consumer Image') {
-      when {
-        expression { env.BUILD_IMAGE == 'true' }
-      }
-      steps {
-        script {
-          docker.build("${CONSUMER_IMAGE}", "./consumer")
-        }
-      }
-    }
-
     stage('Push Producer Image') {
       when {
-        expression { env.BUILD_IMAGE == 'true' }
+        expression { env.BUILD_PRODUCER == 'true' }
       }
       steps {
         withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
@@ -66,9 +57,20 @@ pipeline {
       }
     }
 
+    stage('Build Consumer Image') {
+      when {
+        expression { env.BUILD_CONSUMER == 'true' }
+      }
+      steps {
+        script {
+          docker.build("${CONSUMER_IMAGE}", "./consumer")
+        }
+      }
+    }
+
     stage('Push Consumer Image') {
       when {
-        expression { env.BUILD_IMAGE == 'true' }
+        expression { env.BUILD_CONSUMER == 'true' }
       }
       steps {
         withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
@@ -82,13 +84,13 @@ pipeline {
       }
     }
 
-    stage('Deploy Producer to K3s') {
+    stage('Deploy Producer') {
       steps {
         sh 'kubectl apply -f k8s/producer-deployment.yaml --namespace shipboard'
       }
     }
 
-    stage('Deploy Consumer to K3s') {
+    stage('Deploy Consumer') {
       steps {
         sh 'kubectl apply -f k8s/consumer-deployment.yaml --namespace shipboard'
       }
