@@ -2,12 +2,13 @@ pipeline {
   agent any
 
   environment {
-    IMAGE_NAME = 'doz23/disney-producer:latest'
+    PRODUCER_IMAGE = 'doz23/disney-producer:latest'
+    CONSUMER_IMAGE = 'doz23/disney-consumer:latest'
     BUILD_IMAGE = 'false'
   }
 
   stages {
-    stage('Check for Dockerfile or app/ changes') {
+    stage('Check for Changes') {
       steps {
         script {
           def changes = sh(
@@ -17,28 +18,39 @@ pipeline {
 
           if (changes) {
             echo "Changes detected:\n${changes}"
-            currentBuild.description = "Docker/app changes – building image"
+            currentBuild.description = "Changes in app directories – building images"
             env.BUILD_IMAGE = "true"
           } else {
-            echo "No Dockerfile or app/ changes – skipping image build"
-            currentBuild.description = "No Docker changes"
+            echo "No relevant app changes – skipping image build"
+            currentBuild.description = "No app changes"
           }
         }
       }
     }
 
-    stage('Build Docker Image') {
+    stage('Build Producer Image') {
       when {
         expression { env.BUILD_IMAGE == 'true' }
       }
       steps {
         script {
-          docker.build("${IMAGE_NAME}", "./app")
+          docker.build("${PRODUCER_IMAGE}", "./producer")
         }
       }
     }
 
-    stage('Push to Docker Hub') {
+    stage('Build Consumer Image') {
+      when {
+        expression { env.BUILD_IMAGE == 'true' }
+      }
+      steps {
+        script {
+          docker.build("${CONSUMER_IMAGE}", "./consumer")
+        }
+      }
+    }
+
+    stage('Push Producer Image') {
       when {
         expression { env.BUILD_IMAGE == 'true' }
       }
@@ -47,7 +59,23 @@ pipeline {
           script {
             sh """
               echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-              docker push ${IMAGE_NAME}
+              docker push ${PRODUCER_IMAGE}
+            """
+          }
+        }
+      }
+    }
+
+    stage('Push Consumer Image') {
+      when {
+        expression { env.BUILD_IMAGE == 'true' }
+      }
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
+          script {
+            sh """
+              echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+              docker push ${CONSUMER_IMAGE}
             """
           }
         }
