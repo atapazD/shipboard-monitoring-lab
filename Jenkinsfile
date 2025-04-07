@@ -10,7 +10,7 @@ pipeline {
     stage('Build Producer Image') {
       steps {
         script {
-          docker.build("${PRODUCER_IMAGE}", "./producer")
+          docker.build("${PRODUCER_IMAGE}", "./app/producer")
         }
       }
     }
@@ -31,7 +31,7 @@ pipeline {
     stage('Build Consumer Image') {
       steps {
         script {
-          docker.build("${CONSUMER_IMAGE}", "./consumer")
+          docker.build("${CONSUMER_IMAGE}", "./app/consumer")
         }
       }
     }
