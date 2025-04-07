@@ -4,36 +4,10 @@ pipeline {
   environment {
     PRODUCER_IMAGE = 'doz23/disney-producer:latest'
     CONSUMER_IMAGE = 'doz23/disney-consumer:latest'
-    BUILD_PRODUCER = 'false'
-    BUILD_CONSUMER = 'false'
   }
 
   stages {
-    stage('Detect App Changes') {
-      steps {
-        script {
-          def changes = sh(
-            script: "git diff --name-only HEAD~1 HEAD || true",
-            returnStdout: true
-          ).trim()
-
-          echo "Detected changes:\n${changes}"
-
-          if (changes.contains("producer/")) {
-            env.BUILD_PRODUCER = "true"
-          }
-
-          if (changes.contains("consumer/")) {
-            env.BUILD_CONSUMER = "true"
-          }
-        }
-      }
-    }
-
     stage('Build Producer Image') {
-      when {
-        expression { env.BUILD_PRODUCER == 'true' }
-      }
       steps {
         script {
           docker.build("${PRODUCER_IMAGE}", "./producer")
@@ -42,9 +16,6 @@ pipeline {
     }
 
     stage('Push Producer Image') {
-      when {
-        expression { env.BUILD_PRODUCER == 'true' }
-      }
       steps {
         withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
           script {
@@ -58,9 +29,6 @@ pipeline {
     }
 
     stage('Build Consumer Image') {
-      when {
-        expression { env.BUILD_CONSUMER == 'true' }
-      }
       steps {
         script {
           docker.build("${CONSUMER_IMAGE}", "./consumer")
@@ -69,9 +37,6 @@ pipeline {
     }
 
     stage('Push Consumer Image') {
-      when {
-        expression { env.BUILD_CONSUMER == 'true' }
-      }
       steps {
         withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
           script {
