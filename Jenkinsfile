@@ -11,7 +11,7 @@ pipeline {
       steps {
         script {
           def changes = sh(
-            script: "git diff --name-only HEAD~1 HEAD | grep -E '^Dockerfile|^app/' || true",
+            script: "git diff --name-only HEAD~1 HEAD | grep -E '^Dockerfile|^producer/|^consumer/' || true",
             returnStdout: true
           ).trim()
 
@@ -54,9 +54,15 @@ pipeline {
       }
     }
 
-    stage('Deploy to K3s') {
+    stage('Deploy Producer to K3s') {
       steps {
         sh 'kubectl apply -f k8s/producer-deployment.yaml --namespace shipboard'
+      }
+    }
+
+    stage('Deploy Consumer to K3s') {
+      steps {
+        sh 'kubectl apply -f k8s/consumer-deployment.yaml --namespace shipboard'
       }
     }
   }
