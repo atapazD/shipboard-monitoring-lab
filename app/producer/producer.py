@@ -20,5 +20,5 @@ channel.basic_publish(exchange='',
                       routing_key='disney.queue',
                       body=message)
 
-print(f" [x] Sent '{message}'")
+print(f" [x] Sent this:'{message}'")
 connection.close()
