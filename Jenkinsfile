@@ -62,9 +62,11 @@ pipeline {
     }
   }
 
-  post {
-    always {
-      archiveArtifacts artifacts: '**/*.txt, **/*.json', fingerprint: true
+post {
+  always {
+    node {
+      archiveArtifacts artifacts: '*.txt', allowEmptyArchive: true
     }
   }
+}
 }
