@@ -64,9 +64,7 @@ pipeline {
 
   post {
     always {
-      node {
-        archiveArtifacts artifacts: '*.txt', allowEmptyArchive: true
-      }
+      archiveArtifacts artifacts: '*.txt', allowEmptyArchive: true
     }
   }
 }
