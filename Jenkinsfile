@@ -62,11 +62,11 @@ pipeline {
     }
   }
 
-post {
-  always {
-    node {
-      archiveArtifacts artifacts: '*.txt', allowEmptyArchive: true
+  post {
+    always {
+      node {
+        archiveArtifacts artifacts: '*.txt', allowEmptyArchive: true
+      }
     }
   }
-}
 }
