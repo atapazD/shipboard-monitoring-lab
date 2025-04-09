@@ -9,8 +9,7 @@ pipeline {
     stage('Static Code Analysis') {
       steps {
         sh '''
-          docker run --rm -v $(pwd):/src doz23/devsecops-agent \
-          bandit -r /src/app -o /src/bandit-report.txt || true
+          docker run --rm -v $(pwd):/src doz23/devsecops-agent bandit -r /src/app -o /src/bandit-report.txt || true
         '''
       }
     }
@@ -18,8 +17,7 @@ pipeline {
     stage('Secrets Detection') {
       steps {
         sh '''
-          docker run --rm -v $(pwd):/src doz23/devsecops-agent \
-          trufflehog filesystem /src --no-update > trufflehog-report.json || true
+          docker run --rm -v $(pwd):/src doz23/devsecops-agent trufflehog filesystem /src --no-update > trufflehog-report.json || true
         '''
       }
     }
@@ -27,8 +25,7 @@ pipeline {
     stage('Generate SBOM') {
       steps {
         sh '''
-          docker run --rm -v $(pwd):/src doz23/devsecops-agent \
-          syft /src -o table > sbom.txt || true
+          docker run --rm -v $(pwd):/src doz23/devsecops-agent syft /src -o table > sbom.txt || true
         '''
       }
     }
@@ -36,26 +33,23 @@ pipeline {
     stage('Scan for Vulnerabilities') {
       steps {
         sh '''
-          docker run --rm -v $(pwd):/src doz23/devsecops-agent \
-          grype /src -o table > grype-report.txt || true
+          docker run --rm -v $(pwd):/src doz23/devsecops-agent grype /src -o table > grype-report.txt || true
         '''
       }
     }
 
     stage('Build Docker Image') {
       steps {
-        script {
-          docker.build("${IMAGE_NAME}", "./app")
-        }
+        sh 'docker build -t $IMAGE_NAME ./app'
       }
     }
 
     stage('Push to Docker Hub') {
       steps {
-        withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
+        withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
           sh '''
             echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-            docker push ${IMAGE_NAME}
+            docker push $IMAGE_NAME
           '''
         }
       }
@@ -70,7 +64,7 @@ pipeline {
 
   post {
     always {
-      archiveArtifacts artifacts: '*.txt, *.json', allowEmptyArchive: true
+      archiveArtifacts artifacts: '*.txt,*.json', allowEmptyArchive: true
     }
   }
 }
