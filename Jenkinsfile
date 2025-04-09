@@ -17,7 +17,7 @@ pipeline {
     stage('Secrets Detection') {
       steps {
         sh '''
-          docker run --rm -v $(pwd):/src doz23/devsecops-agent trufflehog filesystem /src --no-update > trufflehog-report.json || true
+          docker run --rm -v $(pwd):/src doz23/devsecops-agent trufflehog /src > trufflehog-report.json || true
         '''
       }
     }
