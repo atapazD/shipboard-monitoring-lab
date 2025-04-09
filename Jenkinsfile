@@ -14,14 +14,6 @@ pipeline {
       }
     }
 
-    stage('Secrets Detection') {
-      steps {
-        sh '''
-          docker run --rm -v $(pwd):/src doz23/devsecops-agent trufflehog /src > trufflehog-report.json || true
-        '''
-      }
-    }
-
     stage('Generate SBOM') {
       steps {
         sh '''
