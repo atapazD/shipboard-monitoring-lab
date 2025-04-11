@@ -14,14 +14,15 @@ params = pika.ConnectionParameters(host=RABBITMQ_HOST, credentials=credentials)
 connection = pika.BlockingConnection(params)
 channel = connection.channel()
 
-channel.queue_declare(queue='shipboard-events', durable=True)
+# Use the same queue name as the consumer
+channel.queue_declare(queue='disney.queue', durable=True)
 
 def generate_event():
     event_types = ["rfid_scan", "pos_sale", "security_alert", "training_completion"]
     event = {
         "type": random.choice(event_types),
         "timestamp": time.time(),
-        "location": random.choice(["ship_1", "castaway_cay", "aulanai", "wdw"]),
+        "location": random.choice(["ship_1", "castaway_cay", "aulani", "wdw"]),
         "payload": {
             "id": random.randint(1000, 9999),
             "value": random.random()
@@ -34,7 +35,7 @@ try:
         message = generate_event()
         channel.basic_publish(
             exchange='',
-            routing_key='shipboard-events',
+            routing_key='disney.queue',
             body=json.dumps(message),
             properties=pika.BasicProperties(delivery_mode=2)  # make message persistent
         )

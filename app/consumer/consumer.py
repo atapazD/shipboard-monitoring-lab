@@ -4,6 +4,7 @@ import time
 import psycopg2
 from psycopg2 import sql
 import logging
+import json
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -18,19 +19,37 @@ pg_user = os.getenv("POSTGRES_USER", "postgres")
 pg_pass = os.getenv("POSTGRES_PASSWORD", "password")
 pg_db   = os.getenv("POSTGRES_DB", "disney_events")
 
-def callback(ch, method, properties, body):
-    message = body.decode()
-    logging.info(f"✔ Received message: {message}")
+def ensure_table_exists(conn):
+    cur = conn.cursor()
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS events (
+            id SERIAL PRIMARY KEY,
+            type TEXT,
+            timestamp DOUBLE PRECISION,
+            location TEXT,
+            payload JSONB
+        )
+    """)
+    conn.commit()
+    cur.close()
 
+def callback(ch, method, properties, body):
+    message_raw = body.decode()
+    logging.info(f"✔ Received message: {message_raw}")
     try:
+        message = json.loads(message_raw)
         conn = psycopg2.connect(
             host=pg_host,
             database=pg_db,
             user=pg_user,
             password=pg_pass
         )
+        ensure_table_exists(conn)
         cur = conn.cursor()
-        cur.execute("INSERT INTO events (message) VALUES (%s)", (message,))
+        cur.execute(
+            "INSERT INTO events (type, timestamp, location, payload) VALUES (%s, %s, %s, %s)",
+            (message["type"], message["timestamp"], message["location"], json.dumps(message["payload"]))
+        )
         conn.commit()
         cur.close()
         conn.close()
