@@ -30,12 +30,12 @@ spec:
             - name: POSTGRES_USER
               valueFrom:
                 secretKeyRef:
-                  name: postgresql
+                  name: postgres
                   key: username
             - name: POSTGRES_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: postgresql
+                  name: postgres-secret
                   key: password
             - name: POSTGRES_DB
               value: disney_events
