@@ -32,7 +32,7 @@ pipeline {
 
     stage('Build Docker Image') {
       steps {
-        sh 'docker build -t $IMAGE_NAME -f producer/Dockerfile ./producer'
+        sh 'docker build -t $IMAGE_NAME -f app/producer/Dockerfile app/producer'
       }
     }
 
