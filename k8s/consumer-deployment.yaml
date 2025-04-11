@@ -26,10 +26,7 @@ spec:
             - name: RABBITMQ_PASS
               value: magicpass
             - name: POSTGRES_HOST
-              valueFrom:
-                secretKeyRef:
-                  name: postgres-secret
-                  key: POSTGRES_HOST
+              value: postgres.shipboard.svc.cluster.local
             - name: POSTGRES_DB
               valueFrom:
                 secretKeyRef:
