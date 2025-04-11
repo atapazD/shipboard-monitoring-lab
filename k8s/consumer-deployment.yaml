@@ -25,3 +25,17 @@ spec:
               value: disney
             - name: RABBITMQ_PASS
               value: magicpass
+            - name: POSTGRES_HOST
+              value: postgresql.shipboard.svc.cluster.local
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgresql
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgresql
+                  key: password
+            - name: POSTGRES_DB
+              value: disney_events
