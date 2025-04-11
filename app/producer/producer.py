@@ -1,24 +1,45 @@
 import pika
-import os
+import json
 import time
+import random
+import os
 
-rabbitmq_host = os.getenv("RABBITMQ_HOST", "rabbitmq")
-rabbitmq_user = os.getenv("RABBITMQ_USER", "disney")
-rabbitmq_pass = os.getenv("RABBITMQ_PASS", "magicpass")
+RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "localhost")
+RABBITMQ_USER = os.getenv("RABBITMQ_USER", "guest")
+RABBITMQ_PASS = os.getenv("RABBITMQ_PASS", "guest")
 
-# Wait to ensure RabbitMQ is ready
-time.sleep(10)
-
-credentials = pika.PlainCredentials(rabbitmq_user, rabbitmq_pass)
-connection = pika.BlockingConnection(pika.ConnectionParameters(host=rabbitmq_host, credentials=credentials))
+# Setup connection
+credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASS)
+params = pika.ConnectionParameters(host=RABBITMQ_HOST, credentials=credentials)
+connection = pika.BlockingConnection(params)
 channel = connection.channel()
 
-channel.queue_declare(queue='disney.queue', durable=True)
+channel.queue_declare(queue='shipboard-events', durable=True)
 
-message = "🎢 Welcome aboard the Disney queue!"
-channel.basic_publish(exchange='',
-                      routing_key='disney.queue',
-                      body=message)
+def generate_event():
+    event_types = ["rfid_scan", "pos_sale", "security_alert", "training_completion"]
+    event = {
+        "type": random.choice(event_types),
+        "timestamp": time.time(),
+        "location": random.choice(["ship_1", "castaway_cay", "aulanai", "wdw"]),
+        "payload": {
+            "id": random.randint(1000, 9999),
+            "value": random.random()
+        }
+    }
+    return event
 
-print(f" [x] Sent :'{message}'")
-connection.close()
+try:
+    while True:
+        message = generate_event()
+        channel.basic_publish(
+            exchange='',
+            routing_key='shipboard-events',
+            body=json.dumps(message),
+            properties=pika.BasicProperties(delivery_mode=2)  # make message persistent
+        )
+        print(f"[x] Sent: {message}")
+        time.sleep(5)
+except KeyboardInterrupt:
+    print("Shutting down producer...")
+    connection.close()
