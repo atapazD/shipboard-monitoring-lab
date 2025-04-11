@@ -2,19 +2,25 @@ import pika
 import os
 import time
 import psycopg2
+from psycopg2 import sql
+import logging
+
+# Setup logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
 # Env vars
 rabbitmq_host = os.getenv("RABBITMQ_HOST", "rabbitmq")
 rabbitmq_user = os.getenv("RABBITMQ_USER", "disney")
 rabbitmq_pass = os.getenv("RABBITMQ_PASS", "magicpass")
-pg_host = os.getenv("POSTGRES_HOST", "postgresql")  # service name in k8s
+
+pg_host = os.getenv("POSTGRES_HOST", "postgresql")
 pg_user = os.getenv("POSTGRES_USER", "postgres")
 pg_pass = os.getenv("POSTGRES_PASSWORD", "password")
 pg_db   = os.getenv("POSTGRES_DB", "disney_events")
 
 def callback(ch, method, properties, body):
     message = body.decode()
-    print(f" [✔] Received: {message}")
+    logging.info(f"✔ Received message: {message}")
 
     try:
         conn = psycopg2.connect(
@@ -28,6 +34,24 @@ def callback(ch, method, properties, body):
         conn.commit()
         cur.close()
         conn.close()
-        print(" [→] Saved to PostgreSQL")
+        logging.info("→ Message saved to PostgreSQL")
     except Exception as e:
-        print(f" [!] PostgreSQL error: {e}")
+        logging.error(f"PostgreSQL error: {e}")
+
+# Continuous consumer loop
+while True:
+    try:
+        logging.info("~ Connecting to RabbitMQ...")
+        credentials = pika.PlainCredentials(rabbitmq_user, rabbitmq_pass)
+        connection = pika.BlockingConnection(
+            pika.ConnectionParameters(host=rabbitmq_host, credentials=credentials)
+        )
+        channel = connection.channel()
+        channel.queue_declare(queue='disney.queue', durable=True)
+
+        logging.info("* Waiting for messages. To exit press CTRL+C")
+        channel.basic_consume(queue='disney.queue', on_message_callback=callback, auto_ack=True)
+        channel.start_consuming()
+    except Exception as e:
+        logging.warning(f"RabbitMQ connection error: {e}. Retrying in 5 seconds...")
+        time.sleep(5)
