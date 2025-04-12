@@ -33,8 +33,8 @@ pipeline {
 
     stage('Build Docker Images') {
       steps {
-        sh 'docker build -t $PRODUCER_IMAGE -f app/producer/Dockerfile app/producer'
-        sh 'docker build -t $CONSUMER_IMAGE -f app/consumer/Dockerfile app/consumer'
+        sh 'docker build --no-cache -t $PRODUCER_IMAGE -f app/producer/Dockerfile app/producer'
+        sh 'docker build --no-cache -t $CONSUMER_IMAGE -f app/consumer/Dockerfile app/consumer'
       }
     }
 
