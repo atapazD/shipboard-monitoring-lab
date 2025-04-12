@@ -66,10 +66,10 @@ while True:
             pika.ConnectionParameters(host=rabbitmq_host, credentials=credentials)
         )
         channel = connection.channel()
-        channel.queue_declare(queue='disney.queue', durable=True)
+        channel.queue_declare(queue='shipboard-events', durable=True)
 
         logging.info("* Waiting for messages. To exit press CTRL+C")
-        channel.basic_consume(queue='disney.queue', on_message_callback=callback, auto_ack=True)
+        channel.basic_consume(queue='shipboard-events', on_message_callback=callback, auto_ack=True)
         channel.start_consuming()
     except Exception as e:
         logging.warning(f"RabbitMQ connection error: {e}. Retrying in 5 seconds...")

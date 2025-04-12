@@ -35,7 +35,7 @@ try:
         message = generate_event()
         channel.basic_publish(
             exchange='',
-            routing_key='disney.queue',
+            routing_key='shipboard-events',
             body=json.dumps(message),
             properties=pika.BasicProperties(delivery_mode=2)  # make message persistent
         )
