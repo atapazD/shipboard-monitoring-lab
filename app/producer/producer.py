@@ -15,7 +15,7 @@ connection = pika.BlockingConnection(params)
 channel = connection.channel()
 
 # Use the same queue name as the consumer
-channel.queue_declare(queue='disney.queue', durable=True)
+channel.queue_declare(queue='shipboard-events', durable=True)
 
 def generate_event():
     event_types = ["rfid_scan", "pos_sale", "security_alert", "training_completion"]
