@@ -5,7 +5,19 @@ import psycopg2
 from psycopg2 import sql
 import logging
 import json
+from prometheus_client import start_http_server, Counter
 
+# Prometheus metrics
+messages_received = Counter("consumer_messages_received_total", "Total messages received from RabbitMQ")
+postgres_errors = Counter("consumer_postgres_errors_total", "PostgreSQL insert errors")
+
+# Start Prometheus HTTP server
+start_http_server(8000)  # Exposes /metrics
+
+# Inside callback:
+messages_received.inc()
+# Inside PostgreSQL exception:
+postgres_errors.inc()
 # Setup logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 

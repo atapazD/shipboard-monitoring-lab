@@ -3,6 +3,15 @@ import json
 import time
 import random
 import os
+from prometheus_client import start_http_server, Counter
+
+# Prometheus metrics
+messages_sent = Counter("producer_messages_sent_total", "Total messages sent to RabbitMQ")
+
+start_http_server(8000)
+
+# Inside the while loop after message is sent:
+messages_sent.inc()
 
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "localhost")
 RABBITMQ_USER = os.getenv("RABBITMQ_USER", "guest")

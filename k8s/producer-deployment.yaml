@@ -25,3 +25,6 @@ spec:
           value: disney
         - name: RABBITMQ_PASS
           value: magicpass
+        ports:
+        - containerPort: 8000
+          name: metrics
