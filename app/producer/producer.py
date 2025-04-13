@@ -4,15 +4,18 @@ import time
 import random
 import os
 from prometheus_client import start_http_server, Counter
+import logging
 
-# Prometheus metrics
+# Setup logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+
+# Prometheus metric
 messages_sent = Counter("producer_messages_sent_total", "Total messages sent to RabbitMQ")
 
-start_http_server(8000)
+# Start Prometheus HTTP server
+start_http_server(8000)  # /metrics exposed here
 
-# Inside the while loop after message is sent:
-messages_sent.inc()
-
+# Env vars
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "localhost")
 RABBITMQ_USER = os.getenv("RABBITMQ_USER", "guest")
 RABBITMQ_PASS = os.getenv("RABBITMQ_PASS", "guest")
@@ -20,10 +23,9 @@ RABBITMQ_PASS = os.getenv("RABBITMQ_PASS", "guest")
 # Setup connection
 credentials = pika.PlainCredentials(RABBITMQ_USER, RABBITMQ_PASS)
 params = pika.ConnectionParameters(host=RABBITMQ_HOST, credentials=credentials)
+
 connection = pika.BlockingConnection(params)
 channel = connection.channel()
-
-# Use the same queue name as the consumer
 channel.queue_declare(queue='shipboard-events', durable=True)
 
 def generate_event():
@@ -46,10 +48,14 @@ try:
             exchange='',
             routing_key='shipboard-events',
             body=json.dumps(message),
-            properties=pika.BasicProperties(delivery_mode=2)  # make message persistent
+            properties=pika.BasicProperties(delivery_mode=2)
         )
-        print(f"[x] Sent: {message}")
+        messages_sent.inc()  # Prometheus metric incremented here
+        logging.info(f"[x] Sent: {message}")
         time.sleep(5)
+
 except KeyboardInterrupt:
-    print("Shutting down producer...")
+    logging.info("Shutting down producer...")
     connection.close()
+except Exception as e:
+    logging.error(f"Unexpected error: {e}")

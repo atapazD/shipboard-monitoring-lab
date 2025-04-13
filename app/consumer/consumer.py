@@ -14,10 +14,6 @@ postgres_errors = Counter("consumer_postgres_errors_total", "PostgreSQL insert e
 # Start Prometheus HTTP server
 start_http_server(8000)  # Exposes /metrics
 
-# Inside callback:
-messages_received.inc()
-# Inside PostgreSQL exception:
-postgres_errors.inc()
 # Setup logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 
@@ -48,6 +44,8 @@ def ensure_table_exists(conn):
 def callback(ch, method, properties, body):
     message_raw = body.decode()
     logging.info(f"✔ Received message: {message_raw}")
+    messages_received.inc()  # ← increment here, as soon as message is received
+
     try:
         message = json.loads(message_raw)
         conn = psycopg2.connect(
@@ -68,6 +66,7 @@ def callback(ch, method, properties, body):
         logging.info("→ Message saved to PostgreSQL")
     except Exception as e:
         logging.error(f"PostgreSQL error: {e}")
+        postgres_errors.inc()  # ← increment error counter if insert fails
 
 # Continuous consumer loop
 while True:
